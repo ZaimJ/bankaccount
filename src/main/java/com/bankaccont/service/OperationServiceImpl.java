@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.xml.ws.Response;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,45 +27,49 @@ public class OperationServiceImpl implements OperationService {
 	}
 
 	@Override
-	public Response depositAmount(Long accountId, float amount) throws Exception {
-		if(amount < 0) throw new Exception("amount is negatif");
+	public void depositAmount(Long accountId, float amount) throws Exception {
+		if (amount < 0)
+			throw new Exception("amount is negatif");
 		BankAccount bankAccount = accountRepository.findByAccountId(accountId);
 		bankAccount.setBalance(bankAccount.getBalance() + amount);
 		accountRepository.save(bankAccount);
-		return null;
 	}
 
 	@Override
-	public Response withdrawAmount(Long accountId, float amount) throws Exception {
-		if(amount < 0) throw new Exception("amount is negatif");
+	public void withdrawAmount(Long accountId, float amount) throws Exception {
+		if (amount < 0)
+			throw new Exception("amount is negatif");
 		BankAccount bankAccount = accountRepository.findByAccountId(accountId);
 		bankAccount.setBalance(bankAccount.getBalance() - amount);
 		accountRepository.save(bankAccount);
-		return null;
 	}
 
 	@Override
-	public Response transfer(Long accountId, Long destinationAccountId, float amount, String motif) throws Exception {
-		if(amount < 0) throw new Exception("amount is negatif");
+	public void transfer(Long accountId, Long destinationAccountId, float amount, String motif) throws Exception {
+		if (amount < 0)
+			throw new Exception("amount is negatif");
+		// Transactionnal code to ensure a complete transfer, any problem of saving should rollback
 		BankAccount bankAccountSender = accountRepository.findByAccountId(accountId);
 		BankAccount bankAccountreceiver = accountRepository.findByAccountId(destinationAccountId);
 		bankAccountSender.setBalance(bankAccountSender.getBalance() - amount);
 		bankAccountreceiver.setBalance(bankAccountreceiver.getBalance() + amount);
-		bankAccountSender.getOperations().add(new TransferOperation(bankAccountSender, OperationType.DEBIT,amount,
-				LocalDate.now(),destinationAccountId, motif));
-		bankAccountreceiver.getOperations().add(new TransferOperation(bankAccountSender, OperationType.CREDIT,amount,
-				LocalDate.now(), destinationAccountId, motif));
+		bankAccountSender.getOperations().add(
+				new TransferOperation(bankAccountSender, OperationType.DEBIT, amount, LocalDate
+						.now(), destinationAccountId, motif));
+		bankAccountreceiver.getOperations().add(
+				new TransferOperation(bankAccountSender, OperationType.CREDIT, amount, LocalDate
+						.now(), destinationAccountId, motif));
 		accountRepository.save(bankAccountSender);
 		accountRepository.save(bankAccountreceiver);
-		return null;
 	}
 
 	@Override
-	public List<TransferOperation>  history(Long accountId, OperationType operationType) {
+	public List<TransferOperation> history(Long accountId, OperationType operationType) {
 		BankAccount bankAccount = accountRepository.findByAccountId(accountId);
 		List<TransferOperation> operations = operationRepository.findByBankaccount(bankAccount);
-		List<TransferOperation> operationsFrom = operations.stream().filter(operation->operation.getOperationType().equals(operationType)).collect(
-				Collectors.toList());
+		List<TransferOperation> operationsFrom = operations.stream()
+				.filter(operation -> operation.getOperationType().equals(operationType))
+				.collect(Collectors.toList());
 		return operationsFrom;
 	}
 }

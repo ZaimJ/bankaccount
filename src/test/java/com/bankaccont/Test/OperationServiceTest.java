@@ -1,9 +1,12 @@
 package com.bankaccont.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.when;
 
+import com.bankaccont.entities.OperationType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -18,6 +21,9 @@ import com.bankaccont.repository.AccountRepository;
 import com.bankaccont.repository.OperationRepository;
 import com.bankaccont.service.BankAccountService;
 import com.bankaccont.service.OperationServiceImpl;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @DataJpaTest
 @ContextConfiguration(classes = { AccountRepository.class, OperationRepository.class, BankAccountService.class })
@@ -39,6 +45,8 @@ public class OperationServiceTest {
 
 	private TransferOperation transferOperation;
 
+	private List<TransferOperation> operations = new ArrayList<>();
+
 	@Mock
 	private AccountRepository accountRepository;
 
@@ -58,6 +66,8 @@ public class OperationServiceTest {
 		this.bankAccountReceiver = OperationFactory.createBankAccount(ACCOUNT_ID_RECEIVER);
 		this.transferOperation = OperationFactory.createTransferOperation(ACCOUNT_ID_RECEIVER);
 		transferOperation.setBankaccount(bankAccountSender);
+		this.operations = OperationFactory.createListTransferOperation(ACCOUNT_ID_SENDER);
+
 	}
 
 	@Test
@@ -121,6 +131,42 @@ public class OperationServiceTest {
 		assertEquals(expectedBalanceSender, bankAccountSender.getBalance(),0.0);
 		assertEquals(expectedBalanceReceiver, bankAccountReceiver.getBalance(),0.0);
 
+	}
+
+	@Test
+	public void should_return_history_transaction_from_bank_account() throws Exception {
+
+		// GIVEN
+		when(accountRepository.findByAccountId(anyLong())).thenReturn(bankAccountSender,bankAccountReceiver);
+		when(operationRepository.findByBankaccount(any())).thenReturn(operations);
+
+		operationServiceImpl.transfer(ACCOUNT_ID_SENDER, ACCOUNT_ID_RECEIVER, AMOUNT, MOTIF);
+		bankAccountSender = accountRepository.findByAccountId(ACCOUNT_ID_SENDER);
+
+		// WHEN
+		List<TransferOperation> operationsFrom = operationServiceImpl.history(ACCOUNT_ID_SENDER, OperationType.DEBIT);
+
+		// THEN
+		assertNotNull(operationsFrom);
+		assertEquals(operationsFrom.get(0).getOperationType(),OperationType.DEBIT);
+	}
+
+	@Test
+	public void should_return_history_transaction_to_bank_account() throws Exception {
+
+		// GIVEN
+		when(accountRepository.findByAccountId(anyLong())).thenReturn(bankAccountSender,bankAccountReceiver);
+		when(operationRepository.findByBankaccount(any())).thenReturn(operations);
+
+		operationServiceImpl.transfer(ACCOUNT_ID_SENDER, ACCOUNT_ID_RECEIVER, AMOUNT, MOTIF);
+		bankAccountSender = accountRepository.findByAccountId(ACCOUNT_ID_SENDER);
+
+		// WHEN
+		List<TransferOperation> operationsFrom = operationServiceImpl.history(ACCOUNT_ID_SENDER, OperationType.CREDIT);
+
+		// THEN
+		assertNotNull(operationsFrom);
+		assertEquals(operationsFrom.get(0).getOperationType(),OperationType.CREDIT);
 	}
 
 }
