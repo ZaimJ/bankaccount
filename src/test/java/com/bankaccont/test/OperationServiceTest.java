@@ -1,4 +1,4 @@
-package com.bankaccont.Test;
+package com.bankaccont.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

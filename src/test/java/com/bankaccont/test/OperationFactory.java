@@ -1,4 +1,4 @@
-package com.bankaccont.Test;
+package com.bankaccont.test;
 
 import com.bankaccont.entities.BankAccount;
 import com.bankaccont.entities.OperationType;

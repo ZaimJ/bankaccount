@@ -1,4 +1,4 @@
-package com.bankaccont.Test;
+package com.bankaccont.test;
 
 import static junit.framework.TestCase.assertNotNull;
 
